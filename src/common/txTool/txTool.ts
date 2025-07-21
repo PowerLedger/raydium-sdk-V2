@@ -88,7 +88,7 @@ export interface TxV0BuildData<T = Record<string, any>> extends Omit<TxBuildData
     lookupTableCache?: CacheLTA;
     lookupTableAddress?: string[];
   };
-  execute: (params?: ExecuteParams) => Promise<{ txId: string; signedTx: VersionedTransaction }>;
+  execute?: (params?: ExecuteParams) => Promise<{ txId: string; signedTx: VersionedTransaction }>;
 }
 
 type TxUpdateParams = {
@@ -257,6 +257,17 @@ export class TxBuilder {
   }): Promise<MakeTxData<TxVersion.LEGACY, O> | MakeTxData<TxVersion.V0, O>> {
     if (txVersion === TxVersion.V0) return (await this.buildV0({ ...(extInfo || {}) })) as MakeTxData<TxVersion.V0, O>;
     return this.build<O>(extInfo) as MakeTxData<TxVersion.LEGACY, O>;
+  }
+
+  public async versionBuildOnlyTx<O = Record<string, any>>({
+    txVersion,
+    extInfo,
+  }: {
+    txVersion?: TxVersion;
+    extInfo?: O;
+  }): Promise<MakeTxData<TxVersion.V0, O>> {
+    if (txVersion === TxVersion.V0) return (await this.buildV0TxNoSendToRpc({ ...(extInfo || {}) })) as MakeTxData<TxVersion.V0, O>;
+    throw new Error("txVersion must be V0");
   }
 
   public build<O = Record<string, any>>(extInfo?: O): MakeTxData<TxVersion.LEGACY, O> {
@@ -581,6 +592,58 @@ export class TxBuilder {
         }
         throw new Error("please provide owner in keypair format or signAllTransactions function");
       },
+      extInfo: (extInfo || {}) as O,
+    };
+  }
+
+  public async buildV0TxNoSendToRpc<O = Record<string, any>>(
+    props?: O & {
+      lookupTableCache?: CacheLTA;
+      lookupTableAddress?: string[];
+      forerunCreate?: boolean;
+      recentBlockhash?: string;
+    },
+  ): Promise<MakeTxData<TxVersion.V0, O>> {
+    const {
+      lookupTableCache = {},
+      lookupTableAddress = [],
+      forerunCreate,
+      recentBlockhash: propRecentBlockhash,
+      ...extInfo
+    } = props || {};
+
+    const lookupTableAddressAccount = {
+      ...(this.cluster === "devnet" ? await getDevLookupTableCache(this.connection) : LOOKUP_TABLE_CACHE),
+      ...lookupTableCache,
+    };
+    const allLTA = Array.from(new Set<string>([...lookupTableAddress, ...this.lookupTableAddress]));
+    const needCacheLTA: PublicKey[] = [];
+    for (const item of allLTA) {
+      if (lookupTableAddressAccount[item] === undefined) needCacheLTA.push(new PublicKey(item));
+    }
+    const newCacheLTA = await getMultipleLookupTableInfo({ connection: this.connection, address: needCacheLTA });
+    for (const [key, value] of Object.entries(newCacheLTA)) lookupTableAddressAccount[key] = value;
+
+    const recentBlockhash = forerunCreate
+      ? PublicKey.default.toBase58()
+      : propRecentBlockhash ?? (await getRecentBlockHash(this.connection, this.blockhashCommitment));
+    const messageV0 = new TransactionMessage({
+      payerKey: this.feePayer,
+      recentBlockhash,
+      instructions: [...this.allInstructions],
+    }).compileToV0Message(Object.values(lookupTableAddressAccount));
+    if (this.owner?.signer && !this.signers.some((s) => s.publicKey.equals(this.owner!.publicKey)))
+      this.signers.push(this.owner.signer);
+    const transaction = new VersionedTransaction(messageV0);
+
+    transaction.sign(this.signers);
+
+    return {
+      builder: this,
+      transaction,
+      signers: this.signers,
+      instructionTypes: [...this.instructionTypes, ...this.endInstructionTypes],
+      execute: undefined,
       extInfo: (extInfo || {}) as O,
     };
   }
