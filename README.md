@@ -12,7 +12,7 @@ An SDK for building applications on top of Raydium.
 ### Installation
 
 ```
-$ yarn add @powerledger-io/raydium-sdk-v2
+$ yarn add @powrldgr/raydium-sdk-v2
 ```
 
 ## SDK local test
@@ -28,7 +28,7 @@ e.g. yarn dev test/init.ts
 ### Initialization
 
 ```javascript
-import { Raydium } from "@powerledger-io/raydium-sdk";
+import { Raydium } from "@powrldgr/raydium-sdk-v2";
 const raydium = await Raydium.load({
   connection,
   owner, // key pair or publicKey, if you run a node process, provide keyPair
@@ -42,7 +42,7 @@ const raydium = await Raydium.load({
 #### how to transform token account data
 
 ```javascript
-import { parseTokenAccountResp } from "@powerledger-io/raydium-sdk";
+import { parseTokenAccountResp } from "@powrldgr/raydium-sdk-v2";
 
 const solAccountResp = await connection.getAccountInfo(owner.publicKey);
 const tokenAccountResp = await connection.getTokenAccountsByOwner(owner.publicKey, { programId: TOKEN_PROGRAM_ID });
