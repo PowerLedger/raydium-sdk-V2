@@ -1765,7 +1765,7 @@ export class Clmm extends ModuleBase {
     );
 
     txBuilder.addCustomComputeBudget(computeBudgetConfig);
-    txBuilder.addTipInstruction(txTipConfig);
+    // txBuilder.addTipInstruction(txTipConfig);
     return txBuilder.versionBuildOnlyTx({ txVersion, extInfo: { recentBlockhash: latestBlockhash } }) as unknown as Promise<MakeTxData<T>>;
   }
 
