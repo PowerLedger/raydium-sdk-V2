@@ -12,12 +12,8 @@ An SDK for building applications on top of Raydium.
 ### Installation
 
 ```
-$ yarn add @raydium-io/raydium-sdk-v2
+$ yarn add @powerledger-io/raydium-sdk-v2
 ```
-
-## SDK method Demo
-
-[SDK V2 Demo Repo](https://github.com/raydium-io/raydium-sdk-V2-demo)
 
 ## SDK local test
 
@@ -32,7 +28,7 @@ e.g. yarn dev test/init.ts
 ### Initialization
 
 ```javascript
-import { Raydium } from "@raydium-io/raydium-sdk";
+import { Raydium } from "@powerledger-io/raydium-sdk";
 const raydium = await Raydium.load({
   connection,
   owner, // key pair or publicKey, if you run a node process, provide keyPair
@@ -46,7 +42,7 @@ const raydium = await Raydium.load({
 #### how to transform token account data
 
 ```javascript
-import { parseTokenAccountResp } from "@raydium-io/raydium-sdk";
+import { parseTokenAccountResp } from "@powerledger-io/raydium-sdk";
 
 const solAccountResp = await connection.getAccountInfo(owner.publicKey);
 const tokenAccountResp = await connection.getTokenAccountsByOwner(owner.publicKey, { programId: TOKEN_PROGRAM_ID });
@@ -75,7 +71,7 @@ raydium.account.tokenAccounts
 raydium.account.tokenAccountRawInfos
 ```
 
-#### Api methods (https://github.com/raydium-io/raydium-sdk-V2/blob/master/src/api/api.ts)
+#### Api methods (https://github.com/powerledger/raydium-sdk-V2/blob/master/src/api/api.ts)
 
 - fetch raydium default mint list (mainnet only)
 
@@ -93,7 +89,7 @@ const data = await raydium.api.getTokenInfo([
 ```
 
 - fetch pool list (mainnet only)
-  available fetch params defined here: https://github.com/raydium-io/raydium-sdk-V2/blob/master/src/api/type.ts#L249
+  available fetch params defined here: https://github.com/powerledger/raydium-sdk-V2/blob/master/src/api/type.ts#L249
 
 ```javascript
 const data = await raydium.api.getPoolList({});

@@ -1,6 +1,6 @@
 {
-  "name": "@powrldgr/raydium-sdk-v2",
-  "version": "0.0.1-alpha",
+  "name": "@powerledger-io/raydium-sdk-v2",
+  "version": "0.0.2-alpha",
   "description": "An SDK for building applications on top of Raydium.",
   "license": "GPL-3.0",
   "main": "./lib/index.js",
@@ -10,7 +10,7 @@
     "./lib",
     "./src"
   ],
-  "repository": "https://github.com/PowerLedger/raydium-sdk-V2",
+  "repository": "https://github.com/powerledger/raydium-sdk-V2",
   "publicConfig": {
     "registry": "https://registry.yarnpkg.com",
     "access": "public"
@@ -20,7 +20,8 @@
     "solana",
     "powr",
     "powrldgr",
-    "powerledger"
+    "powerledger",
+    "powerledger-io"
   ],
   "lint-staged": {
     "{src,test,misc}/**/*.ts": [
