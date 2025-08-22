@@ -1678,14 +1678,11 @@ export class Clmm extends ModuleBase {
     ataCheck: boolean
   ): Promise<MakeTxData<T>> {
 
-    let start = Date.now();
     const txBuilder = this.createTxBuilder(feePayer);
     const baseIn = inputMint.toString() === poolInfo.mintA.address;
     const mintAUseSOLBalance = ownerInfo.useSOLBalance && poolInfo.mintA.address === WSOLMint.toBase58();
     const mintBUseSOLBalance = ownerInfo.useSOLBalance && poolInfo.mintB.address === WSOLMint.toBase58();
-    console.log('Time taken to create tx builder:', Date.now() - start, 'ms');
 
-    start = Date.now();
     let sqrtPriceLimitX64: BN;
     if (!priceLimit || priceLimit.equals(new Decimal(0))) {
       sqrtPriceLimitX64 = baseIn ? MIN_SQRT_PRICE_X64.add(new BN(1)) : MAX_SQRT_PRICE_X64.sub(new BN(1));
@@ -1696,14 +1693,12 @@ export class Clmm extends ModuleBase {
         poolInfo.mintB.decimals,
       );
     }
-    console.log('Time taken to calculate sqrt price limit x64:', Date.now() - start, 'ms');
 
     let ownerTokenAccountA: PublicKey | undefined;
     let ownerTokenAccountB: PublicKey | undefined;
 
     console.log('ataCheck', ataCheck);
     if (ataCheck) {
-      start = Date.now();
       if (!ownerTokenAccountA) {
         const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
           tokenProgram: poolInfo.mintA.programId,
@@ -1724,8 +1719,6 @@ export class Clmm extends ModuleBase {
         ownerTokenAccountA = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
       }
-      console.log('Time taken to get or create token account A:', Date.now() - start, 'ms');
-      start = Date.now();
       if (!ownerTokenAccountB) {
         const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
           tokenProgram: poolInfo.mintB.programId,
@@ -1746,7 +1739,6 @@ export class Clmm extends ModuleBase {
         ownerTokenAccountB = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
       }
-      console.log('Time taken to get or create token account B:', Date.now() - start, 'ms');
       if (!ownerTokenAccountA || !ownerTokenAccountB)
         this.logAndCreateError("user do not have token account", {
           tokenA: poolInfo.mintA.symbol || poolInfo.mintA.address,
@@ -1758,7 +1750,6 @@ export class Clmm extends ModuleBase {
           associatedOnly,
         });
     } else {
-      start = Date.now();
       ownerTokenAccountA = getAssociatedTokenAddressSync(
         new PublicKey(poolInfo.mintA.address),
         this.scope.ownerPubKey,
@@ -1771,13 +1762,9 @@ export class Clmm extends ModuleBase {
         false,
         new PublicKey(poolInfo.mintB.programId),
         ASSOCIATED_TOKEN_PROGRAM_ID);
-      console.log('Time taken to get or create token account A and B:', Date.now() - start, 'ms');
     }
 
-    start = Date.now();
     const poolKeys = propPoolKeys ?? (await this.getClmmPoolKeys(poolInfo.id));
-    console.log('Time taken to get pool keys:', Date.now() - start, 'ms');
-    start = Date.now();
     txBuilder.addInstruction(
       ClmmInstrument.makeSwapBaseInInstructions({
         poolInfo,
@@ -1795,12 +1782,8 @@ export class Clmm extends ModuleBase {
         remainingAccounts,
       }),
     );
-    console.log('Time taken to add instruction:', Date.now() - start, 'ms');
-    start = Date.now();
     txBuilder.addCustomComputeBudget(computeBudgetConfig);
     // txBuilder.addTipInstruction(txTipConfig);
-    console.log('Time taken to add compute budget:', Date.now() - start, 'ms');
-    start = Date.now();
     return txBuilder.versionBuildOnlyTx({ txVersion, extInfo: { recentBlockhash: latestBlockhash } }) as unknown as Promise<MakeTxData<T>>;
   }
 
