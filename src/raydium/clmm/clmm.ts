@@ -1697,7 +1697,6 @@ export class Clmm extends ModuleBase {
     let ownerTokenAccountA: PublicKey | undefined;
     let ownerTokenAccountB: PublicKey | undefined;
 
-    console.log('ataCheck', ataCheck);
     if (ataCheck) {
       if (!ownerTokenAccountA) {
         const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
@@ -1803,6 +1802,7 @@ export class Clmm extends ModuleBase {
     computeBudgetConfig,
     txTipConfig,
     feePayer,
+    latestBlockhash,
   }: {
     poolInfo: ApiV3PoolInfoConcentratedItem;
     poolKeys?: ClmmKeys;
@@ -1822,7 +1822,10 @@ export class Clmm extends ModuleBase {
     computeBudgetConfig?: ComputeBudgetConfig;
     txTipConfig?: TxTipConfig;
     feePayer?: PublicKey;
-  }): Promise<MakeTxData<T>> {
+    latestBlockhash?: string;
+  },
+    ataCheck: boolean
+  ): Promise<MakeTxData<T>> {
     const txBuilder = this.createTxBuilder(feePayer);
     const baseIn = outputMint.toString() === poolInfo.mintB.address;
     const mintAUseSOLBalance = ownerInfo.useSOLBalance && poolInfo.mintA.address === WSOLMint.toBase58();
@@ -1843,59 +1846,73 @@ export class Clmm extends ModuleBase {
     }
 
     let ownerTokenAccountA: PublicKey | undefined;
-    if (!ownerTokenAccountA) {
-      const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
-        tokenProgram: poolInfo.mintA.programId,
-        mint: new PublicKey(poolInfo.mintA.address),
-        notUseTokenAccount: mintAUseSOLBalance,
-        owner: this.scope.ownerPubKey,
-        skipCloseAccount: !mintAUseSOLBalance,
-        createInfo:
-          mintAUseSOLBalance || !baseIn
-            ? {
-              payer: ownerInfo.feePayer || this.scope.ownerPubKey,
-              amount: baseIn ? amountInMax : 0,
-            }
-            : undefined,
-        associatedOnly: mintAUseSOLBalance ? false : associatedOnly,
-        checkCreateATAOwner,
-      });
-      ownerTokenAccountA = account!;
-      instructionParams && txBuilder.addInstruction(instructionParams);
-    }
-
     let ownerTokenAccountB: PublicKey | undefined;
-    if (!ownerTokenAccountB) {
-      const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
-        tokenProgram: poolInfo.mintB.programId,
-        mint: new PublicKey(poolInfo.mintB.address),
-        notUseTokenAccount: mintBUseSOLBalance,
-        owner: this.scope.ownerPubKey,
-        skipCloseAccount: !mintBUseSOLBalance,
-        createInfo:
-          mintBUseSOLBalance || baseIn
-            ? {
-              payer: ownerInfo.feePayer || this.scope.ownerPubKey,
-              amount: baseIn ? 0 : amountInMax,
-            }
-            : undefined,
-        associatedOnly: mintBUseSOLBalance ? false : associatedOnly,
-        checkCreateATAOwner,
-      });
-      ownerTokenAccountB = account!;
-      instructionParams && txBuilder.addInstruction(instructionParams);
-    }
 
-    if (!ownerTokenAccountA || !ownerTokenAccountB)
-      this.logAndCreateError("user do not have token account", {
-        tokenA: poolInfo.mintA.symbol || poolInfo.mintA.address,
-        tokenB: poolInfo.mintB.symbol || poolInfo.mintB.address,
-        ownerTokenAccountA,
-        ownerTokenAccountB,
-        mintAUseSOLBalance,
-        mintBUseSOLBalance,
-        associatedOnly,
-      });
+    if (ataCheck) {
+      if (!ownerTokenAccountA) {
+        const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
+          tokenProgram: poolInfo.mintA.programId,
+          mint: new PublicKey(poolInfo.mintA.address),
+          notUseTokenAccount: mintAUseSOLBalance,
+          owner: this.scope.ownerPubKey,
+          skipCloseAccount: !mintAUseSOLBalance,
+          createInfo:
+            mintAUseSOLBalance || !baseIn
+              ? {
+                payer: ownerInfo.feePayer || this.scope.ownerPubKey,
+                amount: baseIn ? amountInMax : 0,
+              }
+              : undefined,
+          associatedOnly: mintAUseSOLBalance ? false : associatedOnly,
+          checkCreateATAOwner,
+        });
+        ownerTokenAccountA = account!;
+        instructionParams && txBuilder.addInstruction(instructionParams);
+      }
+      if (!ownerTokenAccountB) {
+        const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
+          tokenProgram: poolInfo.mintB.programId,
+          mint: new PublicKey(poolInfo.mintB.address),
+          notUseTokenAccount: mintBUseSOLBalance,
+          owner: this.scope.ownerPubKey,
+          skipCloseAccount: !mintBUseSOLBalance,
+          createInfo:
+            mintBUseSOLBalance || baseIn
+              ? {
+                payer: ownerInfo.feePayer || this.scope.ownerPubKey,
+                amount: baseIn ? 0 : amountInMax,
+              }
+              : undefined,
+          associatedOnly: mintBUseSOLBalance ? false : associatedOnly,
+          checkCreateATAOwner,
+        });
+        ownerTokenAccountB = account!;
+        instructionParams && txBuilder.addInstruction(instructionParams);
+      }
+      if (!ownerTokenAccountA || !ownerTokenAccountB)
+        this.logAndCreateError("user do not have token account", {
+          tokenA: poolInfo.mintA.symbol || poolInfo.mintA.address,
+          tokenB: poolInfo.mintB.symbol || poolInfo.mintB.address,
+          ownerTokenAccountA,
+          ownerTokenAccountB,
+          mintAUseSOLBalance,
+          mintBUseSOLBalance,
+          associatedOnly,
+        });
+    } else {
+      ownerTokenAccountA = getAssociatedTokenAddressSync(
+        new PublicKey(poolInfo.mintA.address),
+        this.scope.ownerPubKey,
+        false,
+        new PublicKey(poolInfo.mintA.programId),
+        ASSOCIATED_TOKEN_PROGRAM_ID);
+      ownerTokenAccountB = getAssociatedTokenAddressSync(
+        new PublicKey(poolInfo.mintB.address),
+        this.scope.ownerPubKey,
+        false,
+        new PublicKey(poolInfo.mintB.programId),
+        ASSOCIATED_TOKEN_PROGRAM_ID);
+    }
 
     const poolKeys = propPoolKeys ?? (await this.getClmmPoolKeys(poolInfo.id));
     txBuilder.addInstruction(
@@ -1915,10 +1932,9 @@ export class Clmm extends ModuleBase {
         remainingAccounts,
       }),
     );
-
     txBuilder.addCustomComputeBudget(computeBudgetConfig);
-    txBuilder.addTipInstruction(txTipConfig);
-    return txBuilder.versionBuildOnlyTx({ txVersion }) as Promise<MakeTxData<T>>;
+    // txBuilder.addTipInstruction(txTipConfig);
+    return txBuilder.versionBuildOnlyTx({ txVersion, extInfo: { recentBlockhash: latestBlockhash } }) as unknown as Promise<MakeTxData<T>>;
   }
 
   public async harvestAllRewards<T extends TxVersion = TxVersion.LEGACY>({
