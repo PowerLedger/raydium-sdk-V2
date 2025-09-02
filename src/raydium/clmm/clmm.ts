@@ -1717,7 +1717,10 @@ export class Clmm extends ModuleBase {
         });
         ownerTokenAccountA = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
+
+        console.log('\nownerTokenAccountA');
         console.log(ownerTokenAccountA);
+        console.log('\ninstructionParams');
         console.log(instructionParams);
       }
       if (!ownerTokenAccountB) {
@@ -1739,7 +1742,10 @@ export class Clmm extends ModuleBase {
         });
         ownerTokenAccountB = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
+
+        console.log('\nownerTokenAccountB');
         console.log(ownerTokenAccountB);
+        console.log('\ninstructionParams');
         console.log(instructionParams);
       }
       if (!ownerTokenAccountA || !ownerTokenAccountB)
@@ -1766,6 +1772,11 @@ export class Clmm extends ModuleBase {
         new PublicKey(poolInfo.mintB.programId),
         ASSOCIATED_TOKEN_PROGRAM_ID);
     }
+
+    console.log('\nfinal ownerTokenAccountA');
+    console.log(ownerTokenAccountA);
+    console.log('\nfinal ownerTokenAccountB');
+    console.log(ownerTokenAccountB);
 
     const poolKeys = propPoolKeys ?? (await this.getClmmPoolKeys(poolInfo.id));
     txBuilder.addInstruction(
