@@ -1717,6 +1717,8 @@ export class Clmm extends ModuleBase {
         });
         ownerTokenAccountA = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
+        console.log(ownerTokenAccountA);
+        console.log(instructionParams);
       }
       if (!ownerTokenAccountB) {
         const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
@@ -1737,6 +1739,8 @@ export class Clmm extends ModuleBase {
         });
         ownerTokenAccountB = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
+        console.log(ownerTokenAccountB);
+        console.log(instructionParams);
       }
       if (!ownerTokenAccountA || !ownerTokenAccountB)
         this.logAndCreateError("user do not have token account", {
