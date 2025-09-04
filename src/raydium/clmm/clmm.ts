@@ -1683,13 +1683,6 @@ export class Clmm extends ModuleBase {
     const mintAUseSOLBalance = ownerInfo.useSOLBalance && poolInfo.mintA.address === WSOLMint.toBase58();
     const mintBUseSOLBalance = ownerInfo.useSOLBalance && poolInfo.mintB.address === WSOLMint.toBase58();
 
-    console.log('\nbaseIn:');
-    console.log(baseIn);
-    console.log('\nmintAUseSOLBalance:');
-    console.log(mintAUseSOLBalance);
-    console.log('\nmintBUseSOLBalance:');
-    console.log(mintBUseSOLBalance);
-
     let sqrtPriceLimitX64: BN;
     if (!priceLimit || priceLimit.equals(new Decimal(0))) {
       sqrtPriceLimitX64 = baseIn ? MIN_SQRT_PRICE_X64.add(new BN(1)) : MAX_SQRT_PRICE_X64.sub(new BN(1));
@@ -1725,10 +1718,6 @@ export class Clmm extends ModuleBase {
         ownerTokenAccountA = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
 
-        console.log('\nownerTokenAccountA:');
-        console.log(ownerTokenAccountA);
-        console.log('\ninstructionParams:');
-        console.log(instructionParams);
       }
       if (!ownerTokenAccountB) {
         const { account, instructionParams } = await this.scope.account.getOrCreateTokenAccount({
@@ -1749,11 +1738,6 @@ export class Clmm extends ModuleBase {
         });
         ownerTokenAccountB = account!;
         instructionParams && txBuilder.addInstruction(instructionParams);
-
-        console.log('\nownerTokenAccountB:');
-        console.log(ownerTokenAccountB);
-        console.log('\ninstructionParams:');
-        console.log(instructionParams);
       }
       if (!ownerTokenAccountA || !ownerTokenAccountB)
         this.logAndCreateError("user do not have token account", {
@@ -1779,11 +1763,6 @@ export class Clmm extends ModuleBase {
         new PublicKey(poolInfo.mintB.programId),
         ASSOCIATED_TOKEN_PROGRAM_ID);
     }
-
-    console.log('\nfinal ownerTokenAccountA:');
-    console.log(ownerTokenAccountA);
-    console.log('\nfinal ownerTokenAccountB:');
-    console.log(ownerTokenAccountB);
 
     const poolKeys = propPoolKeys ?? (await this.getClmmPoolKeys(poolInfo.id));
     txBuilder.addInstruction(
